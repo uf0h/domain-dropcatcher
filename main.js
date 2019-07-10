@@ -8,14 +8,16 @@ const now = get_date();
 const tmrw = format_date(now);
 
 /*  ### PROCESS ### */
-fs.exists(`${tmrw}.txt`, (exists) => {
-  if (!exists) {
-    download_file();
+main();
+
+async function main() {
+  if (!fs.existsSync(`${tmrw}.txt`)) {
+    await download_file();
   }
 
   // ... filter domains
-
-});
+  
+}
 /* ### END PROCESS ### */
 
 function get_date() {
@@ -34,46 +36,51 @@ function format_date(date) {
 }
 
 function download_file() {
-  console.log("Downloading tomorrows list of expiring domains.");
+  return new Promise((resolve, reject) => {
+    console.log("Downloading tomorrows list of expiring domains.");
 
-  const options = {
-    host: 'namejet.com',
-    path: `/download/${tmrw}.txt`,
-    method: 'GET',
-  };
+    const options = {
+      host: 'namejet.com',
+      path: `/download/${tmrw}.txt`,
+      method: 'GET',
+    };
 
-  const request = http.request(options, (resource) => {
-    const writer = fs.createWriteStream(`${tmrw}.txt`);
-    const len = parseInt(resource.headers['content-length'], 10);
-    const bar = new ProgressBar('Downloading [:bar] [:etas] [:percent]', {
-      complete: '=',
-      incomplete: ' ',
-      width: 30,
-      total: len
+    const request = http.request(options, (resource) => {
+      const writer = fs.createWriteStream(`${tmrw}.txt`);
+      const len = parseInt(resource.headers['content-length'], 10);
+      const bar = new ProgressBar('Downloading [:bar] [:etas] [:percent]', {
+        complete: '=',
+        incomplete: ' ',
+        width: 30,
+        total: len
+      });
+
+      resource.on('data', function (chunk) {
+        writer.write(chunk);
+        bar.tick(chunk.length);
+      });
+
+      resource.on('end', function () {
+        console.log("Downloading complete.")
+        writer.end();
+        request.end();
+        resolve();
+      });
+
+      resource.on('error', (error) => {
+        console.log(error);
+      })
     });
 
-    resource.on('data', function (chunk) {
-      writer.write(chunk);
-      bar.tick(chunk.length);
-    });
-
-    resource.on('end', function () {
-      writer.end();
-      console.log("Downloading complete.")
-    });
-
-    resource.on('error', (error) => {
+    request.on('error', (error) => {
       console.log(error);
-    })
-  });
+      writer.end();
+      request.abort();
+      reject();
+    });
 
-  request.on('error', (error) => {
-    console.log(error);
-    writer.end();
-    request.abort();
+    request.end();
   });
-
-  request.end()
 }
 
 async function filter(text, match) {
