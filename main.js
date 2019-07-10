@@ -17,7 +17,7 @@ async function main() {
     // ... create default config
     await create_config().then(conf => config = conf);
   } else {
-    console.log("Loading config...")
+    console.log('Loading config...')
     config = JSON.parse(fs.readFileSync('config.json'));
   }
 
@@ -50,7 +50,7 @@ function format_date(date) {
 
 function create_config() {
   return new Promise((resolve, reject) => {
-    console.log("Generating new config file...")
+    console.log('Generating new config file...')
 
     const defaultConfig = { 
       keywords: ['mc', 'pvp'], 
@@ -66,7 +66,7 @@ function create_config() {
 
 function download_file() {
   return new Promise((resolve, reject) => {
-    console.log("Downloading tomorrows list of expiring domains...");
+    console.log('Downloading tomorrows list of expiring domains...');
 
     const options = {
       host: 'namejet.com',
@@ -90,7 +90,7 @@ function download_file() {
       });
 
       resource.on('end', function () {
-        console.log("Downloading complete...")
+        console.log('Downloading complete...')
         writer.end();
         request.end();
         resolve();
