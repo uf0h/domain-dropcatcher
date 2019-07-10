@@ -1,0 +1,14 @@
+{
+  "name": "domain-dropcatcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "author": "ufo",
+  "license": "ISC",
+  "dependencies": {
+    "progress": "^2.0.3"
+  }
+}
