@@ -4,6 +4,8 @@ let fs = require('fs');
 let http = require('https');
 let ProgressBar = require('progress');
 
+let config;
+
 const now = get_date();
 const tmrw = format_date(now);
 
@@ -11,12 +13,23 @@ const tmrw = format_date(now);
 main();
 
 async function main() {
+  if (!fs.existsSync('config.json')) {
+    // ... create default config
+    await create_config().then(conf => config = conf);
+  } else {
+    console.log("Loading config...")
+    config = JSON.parse(fs.readFileSync('config.json'));
+  }
+
+  console.log(JSON.stringify(config, null, 2));
+
   if (!fs.existsSync(`${tmrw}.txt`)) {
+    // ... download domains list
     await download_file();
   }
 
   // ... filter domains
-  
+
 }
 /* ### END PROCESS ### */
 
@@ -35,9 +48,25 @@ function format_date(date) {
   return `${m}-${dd}-${yyyy}`;
 }
 
+function create_config() {
+  return new Promise((resolve, reject) => {
+    console.log("Generating new config file...")
+
+    const defaultConfig = { 
+      keywords: ['mc', 'pvp'], 
+      tlds: ['com', 'net', 'co'] 
+    };
+
+    fs.writeFile('config.json', JSON.stringify(defaultConfig, null, 2), (error) => {
+      if (error) reject(error);
+      resolve(defaultConfig);
+    });
+  }).catch(error => console.log(error));
+}
+
 function download_file() {
   return new Promise((resolve, reject) => {
-    console.log("Downloading tomorrows list of expiring domains.");
+    console.log("Downloading tomorrows list of expiring domains...");
 
     const options = {
       host: 'namejet.com',
@@ -61,7 +90,7 @@ function download_file() {
       });
 
       resource.on('end', function () {
-        console.log("Downloading complete.")
+        console.log("Downloading complete...")
         writer.end();
         request.end();
         resolve();
@@ -73,14 +102,13 @@ function download_file() {
     });
 
     request.on('error', (error) => {
-      console.log(error);
       writer.end();
       request.abort();
-      reject();
+      reject(error);
     });
 
     request.end();
-  });
+  }).catch(error => console.log(error));
 }
 
 async function filter(text, match) {
